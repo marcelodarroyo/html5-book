@@ -53,9 +53,19 @@ Book = {
         this.openPropertiesDialog = document.getElementById('open-properties-dialog');
         
         // this.canvas.addEventListener('click', this.onCanvasClick, false);
-        this.canvas.addEventListener('mousedown', this.onCanvasMouseDown, false);
-        this.canvas.addEventListener('mouseup', this.onCanvasMouseUp, false);
-        this.canvas.addEventListener('mousemove', this.onCanvasMouseMove, false);
+        this.enableCanvasMouseEventListeners();
+	},
+
+	enableCanvasMouseEventListeners: function () {
+		this.canvas.addEventListener('mousedown', this.onCanvasMouseDown, false);
+	    this.canvas.addEventListener('mouseup', this.onCanvasMouseUp, false);
+	    this.canvas.addEventListener('mousemove', this.onCanvasMouseMove, false);
+	},
+
+	disableCanvasMouseEventListeners: function () {
+		this.canvas.removeEventListener('mousedown', this.onCanvasMouseDown);
+	    this.canvas.removeEventListener('mouseup', this.onCanvasMouseUp);
+	    this.canvas.removeEventListener('mousemove', this.onCanvasMouseMove);
 	},
 
 	// call the external (user-defined) functions
@@ -248,6 +258,7 @@ Book = {
 	},
 
 	onCanvasMouseUp: function (event) {
+		console.log()
 		if ( Book.mode == 'editing' ) {
 			if ( Book.actionOnElement == 'deleting' ) {
 	    		if ( window.confirm('¿Está seguro?') )
@@ -272,11 +283,20 @@ Book = {
 	},	
 
 	onDragOverCanvas: function(event) {
+		console.log('On dragOver...');
 		event.preventDefault();
+		if (event.stopPropagation) {
+    		event.stopPropagation(); // stops the browser from redirecting.
+		}
 	},
 
 	// Drop an image from gallery
 	onCanvasDrop: function(event) {
+		console.log('On canvas drop...');
+		event.preventDefault();
+		if (event.stopPropagation) {
+    		event.stopPropagation(); // stops the browser from redirecting.
+		}
 		if ( ! Book.currentPage )
 			return;
 		// this or event.target is the canvas
@@ -298,6 +318,7 @@ Book = {
 		}
 		Book.canvas.removeEventListener('dragover', Book.onDragOverCanvas);
         Book.canvas.removeEventListener('drop', Book.onCanvasDrop);
+        Book.enableCanvasMouseEventListeners();
 		Book.drawPage();
 	},
 	
@@ -493,12 +514,14 @@ Book = {
 
 	//====================== Dragging events started on gallery =====================
 	enableDropOnCanvas: function () {
-		Book.canvas.addEventListener('dragover', Book.onDragOverCanvas, false);
-        Book.canvas.addEventListener('drop', Book.onCanvasDrop, false);
+		this.disableCanvasMouseEventListeners();
+		this.canvas.addEventListener('dragover', Book.onDragOverCanvas, false);
+        this.canvas.addEventListener('drop', Book.onCanvasDrop, false);
 	},
 
     onBackgroundsDragStart: function (event) {
     	if ( Book.mode == 'editing' && Book.currentPage ) {
+    		console.log('Drag started from backgrounds...');
     		Book.enableDropOnCanvas();
     		Book.draggingObject = this; // this is the background image element
     		Book.draggingFrom = 'backgrounds-gallery';
@@ -507,6 +530,7 @@ Book = {
 
     onImagesDragStart: function (event) {
     	if ( Book.mode == 'editing' && Book.currentPage ) {
+    		console.log('Drag started from images...');
 	    	Book.enableDropOnCanvas();
 	    	Book.draggingObject = this;
 	    	Book.draggingFrom = 'images-gallery';
@@ -515,16 +539,11 @@ Book = {
 
     onSpritesDragStart: function (event) {
     	if ( Book.mode == 'editing' && Book.currentPage ) {
+    		console.log('Drag started from sprites...');
 	    	Book.enableDropOnCanvas();
 	    	Book.draggingObject = this;
 	    	Book.draggingFrom = 'sprites-gallery';
 	    }
-    },
-    
-    // Clip first part of sprite
-    clipSprite: function (img,part) {
-    	// To do...
-    	return img;
     },
 
     //======================= Event handlers properties dialog inputs ===================

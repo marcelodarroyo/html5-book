@@ -1,7 +1,7 @@
 // gallery.js
 
 function loadBackgrounds() {
-	Book.backgroundsGallery.push('backgrounds/Book-background.jpg');
+	Book.backgroundsGallery.push('backgrounds/book-background.jpg');
 }
 
 function loadImages() {
