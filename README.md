@@ -9,3 +9,4 @@ Simple editor/player interactive story book.
 3. In playing mode, resize canvas to full screen and hide edition bars (gallery and pages).
 4. A better css (the actual one sucks)
 5. Fix bug when selecting rotated object (I think it is in geometry.js)
+6. Test on Firefox and Chrome
