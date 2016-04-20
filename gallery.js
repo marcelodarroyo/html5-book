@@ -10,7 +10,8 @@ function loadImages() {
 }
 
 function loadSprites() {
-	Book.spritesGallery.push({ src: 'sprites/bee-float.png', frames:4 });
-	Book.spritesGallery.push({ src: 'sprites/character-jump.png', frames:2 });
+	Book.spritesGallery.push({ src: 'sprites/bee-float.png', cols:4, rows: 1 });
+	Book.spritesGallery.push({ src: 'sprites/character-jump.png', cols:2, rows: 1 });
+	Book.spritesGallery.push({ src: 'sprites/walksequence_spritesheet.png', cols:6, rows: 5 });
 }
 

@@ -371,6 +371,33 @@ Book = {
     	this.ctx.strokeRect(x-5,y+h-5,10,10);
 	},
 
+	drawSpriteFrame: function (elem, image) {
+		var col = Math.floor(elem.currentFrame % elem.cols);
+		var row = Math.floor(elem.currentFrame / elem.cols);
+		var sw = image.width  / elem.cols;			// source frame width
+		var sh = image.height / elem.rows;			// source frame height
+	    var sx = col * sw;							// source frame x position	
+	    var sy = row * sh;							// source frame y position
+  		
+		this.ctx.drawImage(image, sx, sy, sw, sh, elem.x, elem.y, elem.width, elem.height);
+    	
+    	if ( this.mode == 'playing' && !elem.stopped )
+    		if ( ++(elem.ticks) == 60/elem.ticksPerFrame ) {
+    			var frames = elem.cols * elem.rows;
+    			elem.ticks = 0;
+    			if ( elem.animationEnd == 'repeat' )
+    				elem.currentFrame = (elem.currentFrame + 1) % frames;
+    			else
+    				if ( elem.currentFrame < frames - 1 )
+    					elem.currentFrame++;
+    				else if ( elem.currentFrame == frames - 1 ) {
+    					if ( elem.animationEnd == 'reset' )
+    						elem.currentFrame = 0;
+    					elem.stopped = true;
+    				}
+    		}
+	},
+
     drawPageContent: function () {
     	var page = this.currentPage;
     	for (var i=0; i<page.content.length; i++) {
@@ -396,29 +423,8 @@ Book = {
 	    	if ( elem.type == 'image' )
 	    		// Draw image
 	    		this.ctx.drawImage(image, x, y, width, height);
-	    	else {
-	    		// Draw sprite frame
-	    		var sw = image.width / elem.frames;	// frame width
-	    		var sx = elem.currentFrame * sw;	// frame x position
-	    		
-	    		// ctx.drawImage(img,sx,sy,sw,sh,dx,dy,dw,dh)
-	    		this.ctx.drawImage(image, sx, 0, sw, image.height, elem.x, elem.y, elem.width, elem.height);
-		    	
-		    	if ( this.mode == 'playing' && !elem.stopped )
-		    		if ( ++(elem.ticks) == 60/elem.ticksPerFrame ) {
-		    			elem.ticks = 0;
-		    			if ( elem.animationEnd == 'repeat' )
-		    				elem.currentFrame = (elem.currentFrame + 1) % elem.frames;
-		    			else
-		    				if ( elem.currentFrame < elem.frames - 1 )
-		    					elem.currentFrame++;
-		    				else if ( elem.currentFrame == elem.frames - 1 ) {
-		    					if ( elem.animationEnd == 'reset' )
-		    						elem.currentFrame = 0;
-		    					elem.stopped = true;
-		    				}
-		    		}
-	    	}
+	    	else
+	    		this.drawSpriteFrame(elem, image);
 
 	    	// If it is the selected image in canvas, draw outer rectangle
     		if ( this.mode == 'editing' && page.content.indexOf(this.currentElement) == i )
@@ -458,7 +464,8 @@ Book = {
 			rotation: 0,
 			sound: null,					// played while animating
 			gotoPage: null,
-			frames: gallerySprite.frames,
+			cols: gallerySprite.cols,
+			rows: gallerySprite.rows,
 			currentFrame: 0,
 			ticks: 0,
 			ticksPerFrame: 4,				// 15 fps when running at 60 fps
