@@ -585,12 +585,14 @@ Book = {
     },
 
     onPageSelect: function (event) {
-    	console.log('Selecting page ' + this.id);
-    	console.log('Old current page: ' + Book.pages.indexOf(Book.currentPage));
-    	Book.currentPage.miniature.className = '';
-    	Book.currentPage = Book.pages[this.id/1];
-    	Book.currentPage.miniature.className = 'current-page';
-    	Book.drawPage();
+    	if ( Book.mode == 'editing' ) {
+	    	console.log('Selecting page ' + this.id);
+	    	console.log('Old current page: ' + Book.pages.indexOf(Book.currentPage));
+	    	Book.currentPage.miniature.className = '';
+	    	Book.currentPage = Book.pages[this.id/1];
+	    	Book.currentPage.miniature.className = 'current-page';
+	    	Book.drawPage();
+    	}
     },
 
     //======================= Event handlers properties dialog inputs ===================
