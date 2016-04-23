@@ -17,8 +17,6 @@ Geometry = {
 	},
 
 	isPointInRectangle: function(point, rect) {
-		console.log('Point (' + point.x + ',' + point.y + ') in ' +
-			rect.x + ' - ' + rect.y + ' - ' + rect.w + ' - ' + rect.h);
 		return point.x >= rect.x && point.x <= rect.x+rect.w && 
 		       point.y >= rect.y && point.y <= rect.y+rect.h;
 	},

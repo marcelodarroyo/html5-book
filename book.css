@@ -59,6 +59,10 @@ body {
 	height: 48px;
 	margin: auto;
 	margin-bottom: 5px;
+	/*
+	background-size: 100%;
+	background-image: url('res/book-background.jpg');
+	*/
 }
 
 .current-page {
@@ -119,15 +123,23 @@ h3 {
 	left: 0;
 	background: rgba(0,0,0,0.5);
 	z-index: 99999;
+	display: none;
+	/*
 	opacity:0;
 	-webkit-transition: opacity 400ms ease-in;
 	-moz-transition: opacity 400ms ease-in;
 	transition: opacity 400ms ease-in;
+	*/
+	-webkit-transition: display 400ms ease-in;
+	-moz-transition: display 400ms ease-in;
+	transition: display 400ms ease-in;
+
 	pointer-events: none;
 }
 
 .modalDialog:target {
-	opacity:1;
+	/*opacity:1;*/
+	display: block;
 	pointer-events: auto;
 }
 
@@ -169,3 +181,7 @@ h3 {
 }
 
 .modalDialogCloseBtn:hover { background: #00d9ff; }
+
+#sounds {
+	display: none;
+}
