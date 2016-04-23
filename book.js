@@ -648,6 +648,7 @@ Book = {
 	    		Book.currentPage = pages[0];
 	    		Book.currentElement = null;
 		    	Book.createPagesGallery();
+		    	Book.drawPage();
 	    	}
     	};
 
