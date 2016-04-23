@@ -59,10 +59,8 @@ body {
 	height: 48px;
 	margin: auto;
 	margin-bottom: 5px;
-	/*
 	background-size: 100%;
-	background-image: url('res/book-background.jpg');
-	*/
+	background-image: url('res/blank-page-icon.png');
 }
 
 .current-page {
