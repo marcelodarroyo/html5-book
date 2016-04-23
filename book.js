@@ -151,18 +151,17 @@ Book = {
 
 	// create pages miniatures on pages gallery
 	createPagesGallery: function () {
-		var container = document.getElementById('pages');
-		var currentPage = this.currentPage
-		while (container.firstChild)
-			container.removeChild(container.firstChild);
+		var page = this.currentPage;
+		while (this.pagesContainer.firstChild)
+			this.pagesContainer.removeChild(this.pagesContainer.firstChild);
 		for (var i=0; i < this.pages.length; i++) {
 			this.currentPage = this.pages[i];
 			this.drawPage();
 			this.createMiniature();
-			container.appendChild(this.currentPage.miniature);
+			this.pagesContainer.appendChild(this.currentPage.miniature);
 		}
 		if ( this.pages.length > 0 ) {
-			this.currentPage = currentPage;
+			this.currentPage = (page != null) ? page : this.pages[0];
 			this.currentPage.miniature.classList.add('current-page');
 			this.drawPage();
 		}
@@ -354,8 +353,6 @@ Book = {
 	    	this.ctx.beginPath();
 	    	this.drawPageBackground();
 	    	this.drawPageContent();
-	    	this.createMiniature();
-	    	this.currentPage.miniature.classList.toggle('current-page');
     	}
     },
 
@@ -555,15 +552,19 @@ Book = {
     addPage: function () {
     	var i = (!this.currentPage)? -1 : this.pages.indexOf(this.currentPage);
     	console.log('Adding page ' + (i + 1));
-    	this.pages[++i] = { 
+    	this.pages[i+1] = { 
     		background: null, 
     		sound: null, 
     		miniature: null,
     		content: []
     	};
-    	this.currentPage = this.pages[i];
-    	this.createPagesGallery();
+    	this.currentPage.miniature.className = '';
+    	this.currentPage = this.pages[i+1];
     	this.drawPage();
+    	this.createMiniature();
+    	this.pagesContainer.appendChild(this.currentPage.miniature);
+    	this.currentPage = this.pages[i];
+    	this.pages[i+1].miniature.click();
     },
 
     // Delete current page
@@ -579,16 +580,16 @@ Book = {
     			this.currentPage = this.pages[this.pages.length - 1];
     	}
     	if ( this.currentPage ) {
-    		this.createPagesGallery();
-    		this.drawPage();
+    		Book.currentPage.miniature.click();
     	}
     },
 
     onPageSelect: function (event) {
     	console.log('Selecting page ' + this.id);
     	console.log('Old current page: ' + Book.pages.indexOf(Book.currentPage));
+    	Book.currentPage.miniature.className = '';
     	Book.currentPage = Book.pages[this.id/1];
-    	Book.createPagesGallery();
+    	Book.currentPage.miniature.className = 'current-page';
     	Book.drawPage();
     },
 
@@ -646,9 +647,8 @@ Book = {
     		console.log('Loaded ' + Book.pages.length + ' pages');
 	    	if ( Book.pages.length > 0 ) {
 	    		Book.currentPage = pages[0];
-	    		Book.currentElement = null;
 		    	Book.createPagesGallery();
-		    	Book.drawPage();
+		    	Book.currentPage.miniature.click();
 	    	}
     	};
 
