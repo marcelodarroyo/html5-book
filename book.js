@@ -293,7 +293,7 @@ Book = {
     				console.log('Activating srite...');
     				Book.currentElement.stopped = false;
     			}
-    			if ( Book.currentElement.type == 'image' && !Book.currentElement.gotoPage &&
+    			if ( Book.currentElement.type == 'image' && Book.currentElement.gotoPage &&
     				 Book.currentElement.gotoPage > 0 && Book.currentElement.gotoPage <= Book.pages.length ) 
     			{
     				Book.stopPlay();
