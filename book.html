@@ -12,77 +12,99 @@
 
   <body onload="Book.init('canvas');" onresize="Book.resize();">
 
-    <div id="gallery">
-      
-      <div id="backgrounds">
-        <h3>Fondos</h3>
-        <!-- Images goes here (put by BOOK.initBackgroundsGallery()) --> 
-      </div>
-      
-      <div id="images">
-        <h3>Imágenes</h3>
-        <!-- Images goes here (put by BOOK.initImagesGallery()) --> 
-      </div>
+    <!-- Current object (image, sprite) properties -->
+    <div id="properties">
+        <label for="goto-page">Ir a pág.:</label>
+        <input id="goto-page" type="number" name="goto-page" value="0" disabled
+         onchange="Book.onChangeGotoPage(this.value)">
 
-      <div id="sprites">
-        <h3>Animaciones</h3>
-        <!-- Images goes here (put by BOOK.initBackgroundsGallery()) --> 
-      </div>
-
-    </div>
-
-    <canvas id="canvas" width="800px" height="600px">
-      Tu navegador no soporta HTML5. Usa un navegador moderno como Mozilla Firefox o Google Chrome
-    </canvas>
-
-    <!-- Only visible in editing mode -->
-    <div id="pages-gallery">
-      <h3>Páginas</h3>
-      <div id='pages'>
-      <!-- pages miniatures goes here (inserted by BOOK.createPagesGallery()) -->
-      </div>
-      <hr />
-      <button id='add-page-btn' onclick="Book.addPage();"></button>
-      <button id='del-page-btn' onclick="Book.deletePage();"></button> <br>
-
-      <button id='open-btn' onclick="Book.open();"></button>
-      <input  id="open-input" type="file" name="open-input" onchange="Book.onFileOpen(this.files[0])" style="display: none;">
-      <button id='save-btn' onclick="Book.save();"></button> <br>
-
-      <button id='play-btn' onclick="Book.play();"></button>
-    </div>
-
-    <!-- Modal dialog for editing objects properties (hidden) -->
-    <a id="open-properties-dialog" href="#properties-dialog">Open Modal</a>
-
-    <div id="properties-dialog" class="modalDialog">
-      <div>
-        <a href="#close" title="Close" class="modalDialogCloseBtn">X</a>
-        <h2>Propiedades</h2>
-        
-        <label for="sound-src">Sonido:</label>
-        <input id="sound-src" type="file" name="sound-src" accept="audio/*" onchange="Book.onChangeSound(this.files[0])"> <br>
-        
-        <label for="goto-page">Ir a página:</label>
-        <input id="goto-page" type="number" name="goto-page" value="-1" onchange="Book.onChangeGotoPage(this.value)"> <br>
-
-        <label for="anim-start">Comienzo animación:</label>
-        <select id="anim-start" name="anim-start" onchange="Book.onChangeAnimStart(this.value)">
+        <label for="anim-start">Animar:</label>
+        <select id="anim-start" name="anim-start" onchange="Book.onChangeAnimStart(this.value)" disabled>
           <option value="show">Al mostrar página</option>
           <option value="click">Al hacer click</option>
-        </select> <br>
+        </select>
 
-        <label for="anim-end">Fin animación:</label>
-        <select id="anim-end" name="anim-end" onchange="Book.onChangeAnimEnd(this.value)">
-          <option value="repeat">Repetir</option>
+        <label for="anim-end">Parar:</label>
+        <select id="anim-end" name="anim-end" onchange="Book.onChangeAnimEnd(this.value)" disabled>
+          <option value="repeat">Nunca</option>
           <option value="stop">Quedar en la última posición</option>
           <option value="reset">Parar y volver a la primera posición</option>
-        </select> <br>
+        </select>
 
-        <label for="anim-speed">Cuadros/segundo:</label>
-        <input id="anim-speed" type="number" name="anim-speed" value="5" onchange="Book.onChangeAnimSpeed(this.value)"> <br>
+        <label for="anim-speed">Vel. Anim.:</label>
+        <input id="anim-speed" type="number" name="anim-speed" min="1" max="60" disabled
+               onchange="Book.onChangeAnimSpeed(this.value)">
+
+        <br>
+
+        <label for="sound-src">Sonido:</label>
+        <input id="sound-src" type="file" name="sound-src" accept="audio/*" disabled
+               onchange="Book.onChangeSound(this.files[0])">
     </div>
+
+    <div id="editor">
+
+      <!-- Gallety (backgrounds, images, sprites) -->
+      <div id="gallery">
+        
+        <div id="backgrounds">
+          <h3>Fondos</h3>
+          <!-- Images goes here (put by BOOK.initBackgroundsGallery()) --> 
+        </div>
+        
+        <div id="images">
+          <h3>Imágenes</h3>
+          <!-- Images goes here (put by BOOK.initImagesGallery()) --> 
+        </div>
+
+        <div id="sprites">
+          <h3>Animaciones</h3>
+          <!-- Images goes here (put by BOOK.initBackgroundsGallery()) --> 
+        </div>
+
+      </div>
+
+      <!-- The canvas -->
+      <canvas id="canvas" width="800px" height="600px">
+        Tu navegador no soporta HTML5. Usa un navegador moderno como Mozilla Firefox o Google Chrome
+      </canvas>
+
+      <!-- Pages gallery and buttons -->
+      <div id="pages-gallery">
+        <h3 id="pages-header">Páginas</h3>
+        <div id='pages'>
+        <!-- pages miniatures goes here (inserted by BOOK.createPagesGallery()) -->
+        </div>
+
+        <div id="buttons">
+          <input id="add-page-btn" type="button" title="Agregar página" onclick="Book.addPage();">
+          <input id="del-page-btn" type="button" title="Eliminar página actual" onclick="Book.deletePage();"> 
+          <br>
+
+          <input id="open-btn" type="button" title="Cargar diseño de libro" onclick="Book.onOpen();">
+          <input  id="open-input" type="file" name="open-input" onchange="Book.onFileOpen(this.files[0])" style="display: none;">
+          <input id='save-btn' type="button" title="Guardar proyecto" onclick="Book.onSave();"> <br>
+
+          <input id='play-btn' type="button" title="Comenzar/Parar" onclick="Book.play();">
+          <input id='stop-btn' type="button">
+        </div>
+      </div>
+
     </div>
+
+    <!-- Modal dialog for saving content -->
+    <form id="save-dialog" >
+      <input id="save-json" type="radio" name="saving" checked>Guardar diseño (para luego continuar editando)</input>
+      <br>
+      <input id="export-html" type="radio" name="saving" >Exportar libro en HTML</input>
+      <br>
+      <div id="save-buttons">
+        <input id="ok-save-btn" type="button" value="Ok" onclick="Book.save();">
+        <input id="cancel-save-btn" type="button" value="Cancelar" onclick="Book.closeDialog('save-dialog');">
+      <div>
+    </form>
+
+    <script id="start" type="text/javascript"></script>
 
   </body>
 

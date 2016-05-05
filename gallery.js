@@ -1,17 +1,11 @@
-// gallery.js
+// Loading images and sprites
 
-function loadBackgrounds() {
-	Book.backgroundsGallery.push('backgrounds/book-background.jpg');
-}
+Book.backgroundsGallery = ['backgrounds/book-background.jpg'];
 
-function loadImages() {
-	Book.imagesGallery.push('images/lucas.gif');
-	Book.imagesGallery.push('images/mickey.jpg');
-}
+Book.imagesGallery = ['images/lucas.gif','images/mickey.jpg'];
 
-function loadSprites() {
-	Book.spritesGallery.push({ src: 'sprites/bee-float.png', cols:4, rows: 1 });
-	Book.spritesGallery.push({ src: 'sprites/character-jump.png', cols:2, rows: 1 });
-	Book.spritesGallery.push({ src: 'sprites/walksequence_spritesheet.png', cols:6, rows: 5 });
-}
-
+Book.spritesGallery = [
+	{ src: 'sprites/bee-float.png', cols:4, rows: 1 },
+	{ src: 'sprites/character-jump.png', cols:2, rows: 1 },
+	{ src: 'sprites/walksequence_spritesheet.png', cols:6, rows: 5 }
+];

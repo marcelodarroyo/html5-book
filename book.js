@@ -3,20 +3,32 @@ Book namespace
 Description: The Book object controls the rendering of the Book pages. It is a pages
 container. Each page contains a set of objects which can be figures and a sound. A figure
 can have a movement or can represent a jump to other page.
-*/
+
+Internals: 
+
+The book contains an array of pages (Book.pages). 
+Each page is an object (see Book.addPage() method)
+{
+	background: -1, // index of background image in Book.images[] cache
+	content: []     // array of images/sprites in page
+}
+
+Images/sprites objects are created by Book.addImage() and Book.addSprite() respectivelly
+(or loaded from file containing json data, see Book.onFileOpen() and Book.save()).
+========================================================================================*/
 
 Book = {
 	canvas: null,
 	
 	ctx: null,
 
-	backgroundsGallery: [],
+	backgroundsGallery: null,
 
-	imagesGallery: [],
+	imagesGallery: null,
 
-	spritesGallery: [],
+	spritesGallery: null,
 
-	audioGallery: [],
+	audioGallery: null,
 
 	openPropertiesDialog: null,
 
@@ -34,7 +46,7 @@ Book = {
 	currentElement: null,
 
 	// drag and drop management
-	draggingObject: null,		// image (of gallery) dragged 
+	draggedImageId: null,		// image (of gallery) dragged 
 	draggingFrom: null,			// 'from-backgrounds', 'from-images', 'from-sprites'
 
 	// image is been resizing/rotated
@@ -44,8 +56,20 @@ Book = {
 	prevPosX: 0,
 	prevPosY: 0,
 
-	// Sounds container
-	sounds: null,
+	// Images cache
+	images: [],
+
+	// Sound sources
+	soundSources: [],
+
+	// Canvas size (%)
+	canvasWidth: 80,
+	canvasHeight:85,
+
+	// Play buttons
+	playBtn: null,
+    stopBtn: null,
+    playBtnBackground: null,	// remembered background (we change it when playing)
 
 	// Book initialization
 	init: function (canvas) {
@@ -54,44 +78,59 @@ Book = {
           this.ctx = this.canvas.getContext('2d');
 
         this.resize();
-        this.loadGallery();
-        this.initGallery();
+
+        if ( ! document.getElementById('0') )
+        	// We are in fresh editing mode page
+        	this.initGallery();
 
         this.openPropertiesDialog = document.getElementById('open-properties-dialog');
         this.sounds = document.getElementById('sounds');
 
         this.pagesContainer = document.getElementById('pages');
+
+        this.playBtn = document.getElementById('play-btn');
+    	this.stopBtn = document.getElementById('stop-btn');
+        this.playBtnBackground = document.getElementById('play-btn').style.backgroundImage;
         
         this.canvas.addEventListener('mousedown', this.onCanvasMouseDown, false);
 	    this.canvas.addEventListener('mouseup', this.onCanvasMouseUp, false);
-	    this.canvas.addEventListener('mousemove', this.onCanvasMouseMove, false);
-	    Book.canvas.addEventListener('dragover', Book.onDragOverCanvas);
-        Book.canvas.addEventListener('drop', Book.onCanvasDrop);
+	    if ( this.mode == 'editing' ) {
+		    this.canvas.addEventListener('mousemove', this.onCanvasMouseMove, false);
+		    this.canvas.addEventListener('dragover', this.onDragOverCanvas);
+	        this.canvas.addEventListener('drop', this.onCanvasDrop);
+    	}
 	},
 
-	// call the external (user-defined) functions
-	loadGallery: function () {
-		loadBackgrounds();
-		loadImages();
-		loadSprites();
+	startInPlayingMode: function () {
+		this.canvasWidth = this.canvasHeight = 100;
+		this.resize();
+		this.hideGalleries();
+		this.play();
+	},
+
+	hideGalleries: function () {
+		gallery.style.display = 'none';
+		pagesGallery.style.display = 'none';
 	},
 
 	// Resize elements relative to window size
 	resize: function () {
-		this.canvas.width =  80 * window.innerWidth / 100;  // 80% of window width
-		this.canvas.height = 90 * window.innerHeight / 100; // 90% of window height
+		var gallery = document.getElementById('gallery');
+		var pagesGallery = document.getElementById('pages-gallery');
+		var pagesContainer = document.getElementById('pages');
+		var hdr = document.getElementById('pages-header');
+		var buttons = document.getElementById('buttons');
 		
-		if ( this.mode == 'editing' ) {
-			// Resize galleries
-			var gallery = document.getElementById('gallery');
-			gallery.style.height = this.canvas.height + 'px';
+		Book.canvas.width =  Book.canvasWidth * window.innerWidth / 100;
+		Book.canvas.height = Book.canvasHeight * window.innerHeight / 100;
 
-			var pagesGallery = document.getElementById('pages-gallery');
-			pagesGallery.style.height = this.canvas.height + 'px';
-		}
+		gallery.style.height = Book.canvas.height + 'px';
+		pagesGallery.style.height = Book.canvas.height + 'px';
 
-		if ( this.ctx )
-			this.drawPage();
+		pagesContainer.style.height = (Book.canvas.height - buttons.clientHeight - hdr.clientHeight - 39) + 'px';
+
+		if ( Book.currentPage )
+			Book.drawPage();
 	},
 
 	// Create images in gallery
@@ -107,63 +146,99 @@ Book = {
 			this.addImageToGallery("sprites", this.spritesGallery[i].src);
 	},
 
+	// Add an image to gallery (backgrounds, images, sprites)
 	addImageToGallery: function (gallery, src) {
-		var container = document.getElementById(gallery);
+		// Store original image in cache
 		var img = new Image();
 		img.src = src;
-		img.draggable = 'true';
-		img.crossOrigin = "Anonymous";
-		if ( gallery == 'backgrounds' )
-			img.addEventListener('dragstart', this.onBackgroundsDragStart, false);
-		else if ( gallery == 'images' )
-			img.addEventListener('dragstart', this.onImagesDragStart, false);
-		else
-			img.addEventListener('dragstart', this.onSpritesDragStart, false);
-		container.appendChild(img);
+		this.images.push(img);
+
+		if ( this.mode == 'editing' ) {
+			var container = document.getElementById(gallery);
+
+			// Put a copy in gallery
+			img = new Image();
+			img.id = '' + (this.images.length - 1);
+			img.src = src;
+			img.draggable = 'true';
+			img.crossOrigin = "Anonymous";
+
+			if ( gallery == 'backgrounds' )
+				img.addEventListener('dragstart', this.onBackgroundsDragStart, false);
+			else if ( gallery == 'images' )
+				img.addEventListener('dragstart', this.onImagesDragStart, false);
+			else
+				img.addEventListener('dragstart', this.onSpritesDragStart, false);
+			
+			container.appendChild(img);
+		}
 	},
 
-	findSpriteOnGallery: function (imgSrc) {
-		for (var i = 0; i < this.spritesGallery.length; i++)
-			if ( imgSrc.endsWith(this.spritesGallery[i].src) )
-				return this.spritesGallery[i];
-		console.log("Panic: can't find sprite " + imgSrc + " on gallery");
+	// Find an image in cache given image source
+	findImageInCache: function (src) {
+		for (var i = 0; i < this.images.length; i++)
+			if ( this.images[i].src.endsWith(src) ) {
+				console.log('found: ' + i);
+				return this.images[i];
+			}
+		console.log('Panic: can not find image in cache: ' + src);
 		return null;
 	},
 
-	// Create a miniature for pages gallery
-	createMiniature: function () {
-		var i = this.pages.indexOf(this.currentPage);
-		console.log('Creating miniature for page ' + i);
-		var img = new Image();
-		img.id = 'page-'+i;
-		img.crossOrigin = 'Anonymous';
-		img.src = this.canvas.toDataURL();
-		this.currentPage.miniature = img;
-		this.currentPage.miniature.className = 'current-page';
-		img.addEventListener('click', this.onPageSelect, false);
-		var old = document.getElementById(img.id);
-		if ( old )
-			this.pagesContainer.replaceChild(img,old);
-		else
-			this.pagesContainer.appendChild(img);
+	//===================================================================================
+	// Page miniatures handling
+	//===================================================================================
+	getCurrentPageMiniature: function () {
+		var i = Book.pages.indexOf(Book.currentPage);
+		var id = 'page-'+i;
+		return document.getElementById(id);
+	},
+	
+	createPageMiniature: function (i) {
+		var btn = document.createElement("input");
+    	btn.type = "button";
+		btn.id = 'page-'+i;
+		btn.value = 'Pág.'+(i+1);
+
+		// On click, change current page
+		btn.onclick = function () {
+			var oldCurrent = Book.getCurrentPageMiniature();
+			if ( oldCurrent )
+				oldCurrent.classList.remove('current-page');
+			btn.classList.add('current-page');
+			Book.currentPage = Book.pages[this.id.substring(5)/1];
+			Book.drawPage();
+		};
+
+		return btn;
 	},
 
 	// create pages miniatures on pages gallery
 	createPagesGallery: function () {
+		var current = this.currentPage;
+		
+		// remove pages miniatures
 		while ( this.pagesContainer.firstChild )
 			this.pagesContainer.removeChild(this.pagesContainer.firstChild);
+
+		// create miniatures
 		for (var i=0; i < this.pages.length; i++) {
-			this.currentPage = this.pages[i];
-			this.drawPage();
-			this.currentPage.miniature.className = '';
+			// this.currentPage = this.pages[i];
+			// this.drawPage();
+			this.pagesContainer.appendChild(this.createPageMiniature(i));
+			if ( this.pages.indexOf(current) == i )
+				document.getElementById('page-'+i).classList.add('current-page');
 		}
-		if ( this.pages.length ) {
-			this.currentPage = this.pages[0];
-			this.drawPage();
-		}
+
+		// restore current page
+		this.currentPage = current;
+		if ( current )
+			this.getCurrentPageMiniature().click();
 	},
 
-	// Convert window coordindates to canvas coordinates
+	//===================================================================================
+	// Handling object selection in canvas
+	//===================================================================================
 	windowToCanvasCoord: function (x, y) {
      	var bbox = this.canvas.getBoundingClientRect();
      	return { 
@@ -189,6 +264,7 @@ Book = {
     	return null;
     },
 
+    // User click on control? If so, return action string
     clickOnControl: function(loc, fig) {
     	var corner, rp;
     	var center = Geometry.centerOfRectangle(
@@ -208,23 +284,13 @@ Book = {
     	if ( Geometry.isPointInRectangle(loc, {x: rp.x-10, y: rp.y-10, w: 20, h: 20}) )
     		return 'resizing';
 
-		// Check if mouseDown was on rotate control (top-right corner)
-    	corner = {x: fig.x+fig.width, y: fig.y};
-    	rp = Geometry.rotatedPoint(corner, center, angle);
-    	if ( Geometry.isPointInRectangle(loc, {x: rp.x-10, y: rp.y-10, w: 20, h: 20}) )
-    		return 'rotating';
-
-    	// Check if mouseDown was on properties control (bottom-left corner)
-    	corner = {x: fig.x, y: fig.y + fig.height};
-    	rp = Geometry.rotatedPoint(corner, center, angle);
-    	if ( Geometry.isPointInRectangle(loc, {x: rp.x-10, y: rp.y-10, w: 20, h: 20}) )
-    		return 'open-properties-dialog';
-
     	// Otherwise, action enabled is moving (dragging)
     	return 'moving';
     },
 
-    //=========================== Canvas event handlers ===========================
+    //===================================================================================
+    // Canvas event handling
+    //===================================================================================
 	onCanvasMouseDown: function (event) {
 		var loc = Book.windowToCanvasCoord(event.clientX, event.clientY);
 		var clickedOn = Book.selectedObject(loc);
@@ -256,11 +322,7 @@ Book = {
 		} else if ( Book.actionOnElement == 'resizing' ) {
 			elem.width = loc.x-elem.x;
 			elem.height = loc.y-elem.y;
-		} else if ( Book.actionOnElement == 'rotating' )
-			if (loc.x > elem.x + elem.width && loc.y > elem.y)
-				elem.rotation += 1; // Rotate in 5 degrees steps (clockwise)
-			else
-				elem.rotation -= 1;
+		}
 		if ( Book.actionOnElement != '' )
 			Book.drawPage();
 	},
@@ -271,31 +333,18 @@ Book = {
 	    		if ( window.confirm('¿Está seguro?') )
 	    			Book.deleteElement();
 	    	}
-	    	else if ( Book.actionOnElement == 'open-properties-dialog' ) {
-	    		document.getElementById('goto-page').value = Book.currentElement.gotoPage;
-	    		if ( Book.currentElement.type == 'sprite' ) {
-		    		document.getElementById('anim-start').value = Book.currentElement.animationStart;
-		    		document.getElementById('anim-end').value = Book.currentElement.animationEnd;
-		    		document.getElementById('anim-speed').value = Book.currentElement.ticksPerFrame;
-	    		} else {
-	    			document.getElementById('goto-page').value = Book.currentElement.gotoPage;
-	    			console.log('currentElement.gotoPage:' + Book.currentElement.gotoPage);
-	    		}
-	    		Book.openPropertiesDialog.click();
-	    	}
 	    	Book.actionOnElement = '';
+	    	Book.updateProperties();
 	    	Book.drawPage();
     	} else
     		// We are in 'playing' mode
     		if ( Book.currentElement ) {
-    			console.log('Goto page' + (Book.currentElement.gotoPage-1)) ;
     			if ( Book.currentElement.type == 'sprite' && Book.currentElement.animationStart == 'click' ) {
-    				console.log('Activating srite...');
+    				console.log('Activating sprite...');
     				Book.currentElement.stopped = false;
-    			}
-    			if ( Book.currentElement.type == 'image' && Book.currentElement.gotoPage &&
-    				 Book.currentElement.gotoPage > 0 && Book.currentElement.gotoPage <= Book.pages.length ) 
+    			} else if ( Book.currentElement.gotoPage > 0 && Book.currentElement.gotoPage <= Book.pages.length ) 
     			{
+    				// Page change
     				Book.stopPlay();
     				Book.currentPage = Book.pages[Book.currentElement.gotoPage-1];
     				Book.play();
@@ -306,62 +355,133 @@ Book = {
 	onDragOverCanvas: function(event) {
 		console.log('On dragOver...');
 		event.preventDefault();
-		if (event.stopPropagation) {
-    		event.stopPropagation(); // stops the browser from redirecting.
-		}
+		if (event.stopPropagation)
+    		event.stopPropagation();
 	},
 
 	// Drop an image from gallery
 	onCanvasDrop: function(event) {
+		event.preventDefault();
+		if (event.stopPropagation)
+    		event.stopPropagation();
+
 		console.log('On canvas drop...');
 		if ( ! Book.currentPage ) {
 			console.log('No current page, returning...');
 			return;
 		}
-		event.preventDefault();
-		if (event.stopPropagation) {
-    		event.stopPropagation(); // stops the browser from redirecting.
-		}
 
-		// this or event.target is the canvas
-		var imgSrc;
-		if ( Book.draggingFrom == 'backgrounds-gallery' )
-			imgSrc = Book.currentPage.background = Book.draggingObject.src;
+		// this (or event.target) is the canvas
+		if ( Book.draggingFrom == 'backgrounds' ) {
+			Book.currentPage.background = Book.draggedImageId/1;
+		}
 		else {
+			// Dragged is an image or sprite
 			var loc = Book.windowToCanvasCoord(event.clientX, event.clientY);
-			if ( Book.draggingFrom == 'images-gallery' )
+			if ( Book.draggingFrom == 'images' )
 				Book.addImage(loc);
-			if ( Book.draggingFrom == 'sprites-gallery' )
+			if ( Book.draggingFrom == 'sprites' )
 				Book.addSprite(loc);
 			Book.currentElement = Book.currentPage.content[Book.currentPage.content.length - 1];
-			imgSrc = Book.currentElement.src;
+			Book.updateProperties();
 		}
 		
 		Book.drawPage();
 	},
+
+	// Add the dropped image (dragged from gallery to current page)
+	addImage: function (pos) {
+		console.log('Adding image ' + this.draggedImageId);
+		this.currentPage.content.push(
+			{
+				type: 'image',
+				index: this.draggedImageId/1, 	// index in image gallery
+				x: pos.x,						// Initial position
+				y: pos.y,
+				width: 100,						// and size
+				height: 100,
+				rotation: 0,					// Rotation degrees
+				sound: -1,						// sound index (in Book.sounds[])
+				gotoPage: 0						// Skip to page when click
+			}
+		);
+	},
+
+	// Add an dropped sprite (dragged from gallery to current page)
+	addSprite: function (pos) {
+		console.log('Adding sprite ' + this.draggedImageId);
+		this.currentPage.content.push(
+			{
+				type: 'sprite',
+				index: this.draggedImageId/1,	// index in image gallery
+				x: pos.x,						// Initial position
+				y: pos.y,
+				width: 100,						// and size
+				height: 100,
+				rotation: 0,					// Rotation degrees
+				sound: -1,						// Sound index (in Book.sounds[])
+				ticksPerFrame: 5,				// 12 fps when running at 60 fps
+				animationStart: 'show',			// click | show
+				animationEnd: 'repeat',  		// stop | reset | repeat
+				stopped: false,					// Animation state 
+				currentFrame: 0,				// Attributes for animation
+				ticks: 0
+			}
+		);
+	},	
+
+    // Delete selected element
+    deleteElement: function () {
+    	if (this.currentPage && this.currentElement) {
+    		var i = this.currentPage.content.indexOf(this.currentElement);
+    		this.currentPage.content.splice(i,1);
+    		this.currentElement = null;
+    		this.drawPage();
+    	}
+    },
 	
-	//=========================== Draw current page =========================
+	//===================================================================================
+	// Canvas drawing
+	//===================================================================================
     drawPage: function () {
-    	if ( this.currentPage ) {
-    		console.log('Drawing page...');
-	    	this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-	    	this.ctx.beginPath();
-	    	this.drawPageBackground();
-	    	this.drawPageContent();
-	    	if ( this.mode == 'editing' )
-	        	this.createMiniature();
+    	if ( ! this.currentPage )
+    		return;
+
+    	this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+    	this.ctx.beginPath();
+
+		// Draw background
+		if ( this.currentPage.background >= 0 ) {
+			var img = this.images[this.currentPage.background];
+			this.ctx.drawImage(img, 0, 0, this.canvas.width, this.canvas.height);
+		}
+		
+		// Draw images
+    	for (var i = 0; i<this.currentPage.content.length; i++) {
+    		var elem = this.currentPage.content[i];
+    		var x = elem.x,
+    	        y = elem.y;
+    	
+	    	if ( elem.rotation > 0) {
+	    		var w = elem.width,
+    	    	    h = elem.height;
+	    		this.ctx.save();
+	    		// 1: Translate canvas context origin to center of figure
+    			this.ctx.translate(x + w/2, y + h/2);
+    			// 2: rotate context
+    			this.ctx.rotate(elem.rotation * Math.PI / 180);
+    			x = -(w/2); y = -(h/2);
+	    	}
+	    	if ( elem.type == 'image' )
+	    		this.drawImage(elem, x, y);
+	    	else
+	    		this.drawSpriteFrame(elem, x, y);
+	    	if ( elem.rotation != 0 )
+	    		this.ctx.restore(); // return to previous canvas settings
 	    }
     },
 
-    drawPageBackground: function () {
-    	if ( this.currentPage.background ) {
-	    	var image = new Image();
-	    	image.src = this.currentPage.background;
-	    	this.ctx.drawImage(image, 0, 0, this.canvas.width, this.canvas.height);
-	    }
-    },
-
-    // Draw image controls (for move, resize, and rotate)
+    // Draw image controls (for move, resize, rotate, delete and open properties dialog)
     drawControls: function(x,y,w,h) {
     	// this.ctx.stokeStyle = 'rgba(0,0,255,1)';
     	this.ctx.lineWidth = 1;
@@ -375,37 +495,35 @@ Book = {
     	this.ctx.lineTo(x+w,y+h);
     	this.ctx.stroke();
 
-    	// draw rotation control (in top-right corner)
-    	this.ctx.beginPath();
-    	this.ctx.arc(x+w,y,5,0,2*Math.PI,true);
-    	this.ctx.stroke();
-
     	// draw delete control (in top-left corner)
     	this.ctx.beginPath();
     	this.ctx.moveTo(x-5,y-5); this.ctx.lineTo(x+5,y+5);
     	this.ctx.moveTo(x-5,y+5); this.ctx.lineTo(x+5,y-5);
 		this.ctx.stroke();
-
-		// draw properties edit control (in bottom-left corner)
-    	this.ctx.strokeRect(x-5,y+h-5,10,10);
 	},
 
-	drawSpriteFrame: function (elem, image, x, y) {
-		var col = Math.floor(elem.currentFrame % elem.cols);
-		var row = Math.floor(elem.currentFrame / elem.cols);
-		var sw = image.width  / elem.cols;			// source frame width
-		var sh = image.height / elem.rows;			// source frame height
-    	var sx = col * sw;							// source frame x position	
-    	var sy = row * sh;							// source frame y position
+	// Draw a sprite frame and compute next frame
+	drawSpriteFrame: function (elem, x, y) {
+		var i = elem.index - (this.backgroundsGallery.length + this.imagesGallery.length);
+		var sprite = this.spritesGallery[i];
+		var img = this.images[elem.index];
+		var col = Math.floor(elem.currentFrame % sprite.cols);
+		var row = Math.floor(elem.currentFrame / sprite.cols);
+		var sw  = Math.floor(img.width / sprite.cols);	// source frame width
+		var sh  = Math.floor(img.height / sprite.rows);	// source frame height
+    	var sx  = col * sw;								// source frame x position	
+    	var sy  = row * sh;								// source frame y position
 
-		this.ctx.drawImage(image, sx, sy, sw, sh, x, y, elem.width, elem.height);
-		if ( this.mode == 'editing' &&  elem == this.currentElement )
-			this.drawControls(x, y, elem.width, elem.height);
+    	console.log('Drawing sprite ' + elem.index, ' frame:' + elem.currentFrame );
+    	console.log('Frame: (' + sx + ',' + sy + ',' + sw + ',' + sh + ')');
+		Book.ctx.drawImage(img, sx, sy, sw, sh, x, y, elem.width, elem.height);
+		if ( Book.mode == 'editing' &&  elem == Book.currentElement )
+			Book.drawControls(x, y, elem.width, elem.height);
     	
+    	// compute next frame
     	if ( this.mode == 'playing' && !elem.stopped )
-    		// get next frame
     		if ( ++(elem.ticks) == 60/elem.ticksPerFrame ) {
-    			var frames = elem.cols * elem.rows;
+    			var frames = sprite.cols * sprite.rows;
     			elem.ticks = 0;
     			if ( elem.animationEnd == 'repeat' )
     				elem.currentFrame = (elem.currentFrame + 1) % frames;
@@ -413,7 +531,7 @@ Book = {
     				if ( elem.currentFrame < frames - 1 )
     					elem.currentFrame++;
     				else
-    					// We have to stop sprite
+    					// Stop sprite animation
     					if ( elem.currentFrame == frames - 1 ) {
 	    					if ( elem.animationEnd == 'reset' )
 	    						elem.currentFrame = 0;
@@ -423,182 +541,88 @@ Book = {
 	},
 
 	// Draw image in canvas
-	drawImage: function(elem, image, x, y) {
+	drawImage: function(elem, x, y) {
+		var image = this.images[elem.index];
 	    this.ctx.drawImage(image, x, y, elem.width, elem.height);
 	   	if (this.mode == 'editing' && elem == this.currentElement)
     		this.drawControls(x,y,elem.width,elem.height);
 	},
 
-    drawPageContent: function () {
-    	var page = this.currentPage;
-    	for (var i=0; i<page.content.length; i++) {
-    		var elem = page.content[i];
-	    	var x = elem.x,
-	    	    y = elem.y,
-	    	    width = elem.width,
-	    	    height = elem.height;
-	    	var rotation = elem.rotation;
-
-	    	var image = new Image();
-	    	image.src = elem.src;
-
-	    	if ( rotation != 0) {
-	    		this.ctx.save(); // save current canvas settings
-	    		// 1: Translate canvas origin to center of figure
-    			this.ctx.translate(x + width/2, y + height/2);
-    			// 2: rotate
-    			this.ctx.rotate(rotation * Math.PI / 180);
-    			x = -(width/2); y = -(height/2);
-	    	}
-
-	    	if ( elem.type == 'image' )
-	    		Book.drawImage(elem, image, x, y);
-	    	else
-	    		Book.drawSpriteFrame(elem, image, x, y);
-
-	    	if ( rotation != 0 )
-	    		this.ctx.restore(); // return to previous canvas settings
-    	} // end for
-    },
-
-    // Add an image dragged from gallery to current page
-	addImage: function (pos) {
-		var img = {
-			type: 'image',
-			src: this.draggingObject.src,
-			x: pos.x,
-			y: pos.y,
-			width: 100,
-			height: 100,
-			rotation: 0,
-			sound: null,	// activated on click
-			gotoPage: -1
-		};
-		this.currentPage.content.push(img);
-	},
-
-	// Add an sprite from gallery to current page
-	addSprite: function (pos) {
-		var gallerySprite = this.findSpriteOnGallery(this.draggingObject.src);
-		var img = {
-			type: 'sprite',
-			src: this.draggingObject.src,
-			x: pos.x,
-			y: pos.y,
-			width: 100,
-			height: 100,
-			rotation: 0,
-			sound: null,					// played while animating
-			gotoPage: -1,
-			cols: gallerySprite.cols,
-			rows: gallerySprite.rows,
-			currentFrame: 0,
-			ticks: 0,
-			ticksPerFrame: 5,				// 12 fps when running at 60 fps
-			animationStart: 'show',			// click | show
-			animationEnd: 'repeat',  		// stop | reset | repeat
-			stopped: false
-		};
-		this.currentPage.content.push(img);
-	},	
-
-    // Delete selected element
-    deleteElement: function () {
-    	if (this.currentPage && this.currentElement) {
-    		var i = this.currentPage.content.indexOf(this.currentElement);
-    		this.currentPage.content.splice(i,1);
-    		this.currentElement = null;
-    	}
-    	this.drawPage();
-    },
-
-	//====================== Dragging events started on gallery =====================
+	//===================================================================================
+	// Gallery images start dragging events
+	//===================================================================================
     onBackgroundsDragStart: function (event) {
     	if ( Book.mode == 'editing' && Book.currentPage ) {
     		console.log('Drag started from backgrounds...');
-    		Book.draggingObject = this; // this is the background image element
-    		Book.draggingFrom = 'backgrounds-gallery';
+    		Book.draggedImageId = this.id;
+    		Book.draggingFrom = 'backgrounds';
     	}
     },
 
     onImagesDragStart: function (event) {
     	if ( Book.mode == 'editing' && Book.currentPage ) {
     		console.log('Drag started from images...');
-	    	Book.draggingObject = this;
-	    	Book.draggingFrom = 'images-gallery';
+	    	Book.draggedImageId = this.id;
+	    	Book.draggingFrom = 'images';
 	    }
     },
 
     onSpritesDragStart: function (event) {
     	if ( Book.mode == 'editing' && Book.currentPage ) {
     		console.log('Drag started from sprites...');
-	    	Book.draggingObject = this;
-	    	Book.draggingFrom = 'sprites-gallery';
+	    	Book.draggedImageId = this.id;
+	    	Book.draggingFrom = 'sprites';
 	    }
     },
 
-    //=================================== Pages management ===========================
+    //===================================================================================
+    // Pages management
+    //===================================================================================
+
     // Add page after current page
     addPage: function () {
     	var i = (!this.currentPage)? -1 : this.pages.indexOf(this.currentPage);
-    	console.log('Adding page ' + (i + 1));
-    	if ( this.currentPage )
-    		this.currentPage.miniature.className = '';
-    	this.pages[++i] = { 
-    		background: null, 
-    		sound: null, 
-    		miniature: null,
-    		content: []
-    	};
+    	this.pages[++i] = { background: -1, content: [] };
     	this.currentPage = this.pages[i];
+    	this.createPagesGallery();
     	this.drawPage();
-    	this.currentPage.miniature.className = 'current-page';
     },
 
     // Delete current page
     deletePage: function () {
-    	if ( this.currentPage ) {
-    		var i = this.pages.indexOf(this.currentPage);
-    		var img = document.getElementById('page-'+i);
-    		this.pagesContainer.removeChild(img);
-    		this.pages.splice(i,1);
-    		if ( this.pages.length == 0 )
-    			this.currentPage = this.currentElement = null;
-    		else if (i >= this.pages.length)
-    			this.currentPage = this.pages[this.pages.length - 1];
-    	}
-    	if ( this.currentPage )
-    		Book.currentPage.miniature.click();
+    	if ( ! this.currentPage )
+    		return;
+    	var i = this.pages.indexOf(this.currentPage);
+		this.pagesContainer.removeChild(this.getCurrentPageMiniature());
+		this.pages.splice(i,1);
+
+		// Select new current page
+		if ( this.pages.length == 0 )
+			this.currentPage = this.currentElement = null;
+		else if (i >= this.pages.length)
+			this.currentPage = this.pages[this.pages.length - 1];
+		if ( this.currentPage ) {
+			this.drawPage();
+			this.createPagesGallery();
+		}
     },
 
-    onPageSelect: function (event) {
-    	if ( Book.mode == 'editing' ) {
-	    	console.log('Selecting page ' + this.id);
-	    	console.log('Old current page: ' + Book.pages.indexOf(Book.currentPage));
-	    	Book.currentPage.miniature.className = '';
-	    	Book.currentPage = Book.pages[this.id.substring(5)/1];
-	    	Book.drawPage();
-	    	Book.currentPage.miniature.className = 'current-page';
-    	}
-    },
-
-    //======================= Event handlers properties dialog inputs ===================
+    //===================================================================================
+    // Handling changes on input in properties dialog
+    //===================================================================================
     onChangeSound: function (src) {
-    	this.currentElement.sound = src;
-    	if ( page.content[i].sound ) {
-    						var s = new Audio();
-    						s.src = page.content[i].sound;
-    						this.page.sounds.push(s);
-    					}
+    	// To do...
     },
 
 	onChangeGotoPage: function (value) {
-    	this.currentElement.gotoPage = value;
-    	this.currentElement.currentFrame = 0;
+		if ( this.currentElement && this.currentElement.type == 'image' ) {
+			console.log('changing goto (' + value + ') to ' + this.currentElement.index);
+	    	this.currentElement.gotoPage = value;
+		}
     },    
 
     onChangeAnimStart: function (value) {
-    	if ( this.currentElement.type == 'sprite' ) {
+    	if ( this.currentElement && this.currentElement.type == 'sprite' ) {
 	    	this.currentElement.animationStart = value;
 	    	this.currentElement.currentFrame = this.currentElement.ticks = 0;
 	    	this.currentElement.stopped = (value == 'click');
@@ -606,25 +630,62 @@ Book = {
     },
 
     onChangeAnimEnd: function (value) {
-    	if ( this.currentElement.type == 'sprite' ) {
+    	if ( this.currentElement && this.currentElement.type == 'sprite' ) {
 	    	this.currentElement.animationEnd = value;
 	    	this.currentElement.currentFrame = this.currentElement.ticks = 0;
     	}
     },
 
     onChangeAnimSpeed: function (value) {
-    	if ( this.currentElement.type == 'sprite' ) {
+    	if ( this.currentElement && this.currentElement.type == 'sprite' ) {
+    		console.log('New speed: ' + value);
 	    	this.currentElement.ticksPerFrame = value;	// asumming running at 60 fps
 	    	this.currentElement.currentFrame = this.currentElement.ticks = 0;
     	}
     },
 
-    animFrameID: null,
+    updateProperties: function () {
+    	var gotoPage = document.getElementById('goto-page');
+    	var animStart = document.getElementById('anim-start');
+    	var animEnd = document.getElementById('anim-end');
+    	var animSpeed = document.getElementById('anim-speed');
+    	var sound = document.getElementById('sound-src');
 
-    //=============================== Saving/loading proyect ============================
-    open: function () {
-    	var fileInput = document.getElementById('open-input');
-    	fileInput.click();
+		gotoPage.value = animSpeed.value = 0;
+		gotoPage.disabled = animStart.disabled = animEnd.disabled = animSpeed.disabled = sound.disabled =
+		animSpeed.disabled = true;
+
+		if ( this.currentElement ) {
+			sound.disabled = false;
+			sound.filename = Book.currentElement.sound;
+		}
+		else
+			return;
+    	if ( this.currentElement.type == 'image' ) {
+    		gotoPage.disabled = false;
+    		gotoPage.value = Book.currentElement.gotoPage;
+    		animSpeed.value = 0;
+    	}
+    	if ( this.currentElement.type == 'sprite' ) {
+    		animStart.disabled = false;
+	    	animStart.value = Book.currentElement.animationStart;
+
+	    	animEnd.disabled = false;
+	    	animEnd.value = Book.currentElement.animationEnd;
+
+	    	animSpeed.disabled = false;
+	    	animSpeed.value = Book.currentElement.ticksPerFrame;
+
+    		gotoPage.value = 0;
+    		gotoPage.disabled = true;
+    	}
+    },
+
+    //===================================================================================
+    // Proyect save/load
+    //===================================================================================
+    onOpen: function () {
+    	document.getElementById('open-input').click();
     },
 
     onFileOpen: function(file) {
@@ -634,43 +695,70 @@ Book = {
     	reader.onload = function (event) {
     		Book.pages = eval(reader.result);
     		console.log('Loaded ' + Book.pages.length + ' pages');
-	    	if ( Book.pages.length > 0 )
+	    	if ( Book.pages.length > 0 ) {
+	    		Book.currentPage = Book.pages[0];
 		    	Book.createPagesGallery();
-		    // wait for drawing page miniature
-		    window.setTimeout(function () { document.getElementById('page-0').click(); }, 500);
+	    	}
     	};
 
     	reader.readAsText(file);
     },
 
-    save: function () {
-    	var w = window.open();
-    	w.document.write( JSON.stringify(this.pages) );
+    // Save book in files. To do: Use a server for uploading content
+    onSave: function () {
+    	document.getElementById('save-dialog').style.display = 'block';
     },
 
-    //====================================== Play Book ==================================
+    save: function () {
+    	var saveJSON = document.getElementById('save-json').checked;
+    	var json = JSON.stringify(this.pages);
+    	this.closeDialog('save-dialog');
+    	if ( saveJSON )
+	    	window.open().document.write(json);
+	    else {
+	    	// Export full HTML document
+	    	var scriptElement = document.getElementById('start');
+	    	scriptElement.text = 'Book.pages = ' + json + '; Book.startInPlayingMode();';
+	    	window.open().document.write('<!DOCTYPE html>' + document.outerHTML);
+	    }
+    },
+
+    closeDialog: function (dlgId) {
+    	document.getElementById(dlgId).style.display = 'none';
+    },
+
+    //===================================================================================
+    // Animation
+    //===================================================================================
+    animFrameID: null,
+
     update: function (time) {
     	Book.animFrameID = window.requestAnimationFrame(Book.update);
     	Book.drawPage();
     },
 
     stopPlay: function () {
-    	// from playing to editing
+    	// from playing to edition mode
     	window.cancelAnimationFrame(this.animFrameID);
-    	var icon = document.getElementById('play-btn');
-    	icon.style.backgroundImage = "url('res/play-icon.png')";
+
+    	// Change icon fro stop to play
+    	this.playBtn.style.backgroundImage = this.playBtnBackground;
     	this.animFrameID = null;
     	this.mode = 'editing';
+
+    	this.createPagesGallery();
     },
 
-    // Start playing current page
+    // Start playing from current page
     play: function () {
-    	if ( this.mode == 'editing' ) {
+    	if ( this.mode == 'editing' && this.pages.length > 0 ) {
     		// from editing to playing
-    		var icon = document.getElementById('play-btn');
-    		var page = this.currentPage;
+    		var page = Book.currentPage;
     		this.mode = 'playing';
-    		icon.style.backgroundImage = "url('res/stop-icon.png')";
+    		// this.playBtn.style.backgroundImage = this.stopBtn.style.backgroundImage;
+    		this.playBtn.style.backgroundImage = 'url("res/stop-icon.png")';
+
+    		// reset sprites
     		for (var i=0; i < page.content.length; i++)
     			if ( page.content[i].type == 'sprite' ) {
     				page.content[i].stopped = page.content[i].animationStart == 'click';
@@ -679,6 +767,7 @@ Book = {
     		this.animFrameID = window.requestAnimationFrame(this.update);
     	}
     	else
+    		if ( this.mode == 'playing' )
     		this.stopPlay();
     }
 };
