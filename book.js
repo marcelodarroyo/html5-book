@@ -68,8 +68,8 @@ Book = {
 
 	// Play buttons
 	playBtn: null,
-    stopBtn: null,
-    playBtnBackground: null,	// remembered background (we change it when playing)
+ 	stopBtn: null,
+	playBtnBackground: null,	// remembered background (we change it when playing)
 
 	// Book initialization
 	init: function (canvas) {
@@ -733,8 +733,8 @@ Book = {
     animFrameID: null,
 
     update: function (time) {
-    	Book.animFrameID = window.requestAnimationFrame(Book.update);
     	Book.drawPage();
+    	Book.animFrameID = window.requestAnimationFrame(Book.update);
     },
 
     stopPlay: function () {
@@ -771,3 +771,5 @@ Book = {
     		this.stopPlay();
     }
 };
+
+/* vim: set expandtab tabstop=4 shiftwidth=4 : */

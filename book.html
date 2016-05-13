@@ -36,10 +36,13 @@
                onchange="Book.onChangeAnimSpeed(this.value)">
 
         <br>
-
+		
         <label for="sound-src">Sonido:</label>
         <input id="sound-src" type="file" name="sound-src" accept="audio/*" disabled
-               onchange="Book.onChangeSound(this.files[0])">
+               onchange="Book.onChangeSound(this.files[0]);">
+
+    	<label for="text">Texto:</label>
+	<input id="text" type="text" disabled onchange="Book.onChangeText(this.value);">
     </div>
 
     <div id="editor">
@@ -82,7 +85,7 @@
           <br>
 
           <input id="open-btn" type="button" title="Cargar diseño de libro" onclick="Book.onOpen();">
-          <input  id="open-input" type="file" name="open-input" onchange="Book.onFileOpen(this.files[0])" style="display: none;">
+          <input id="open-input" type="file" name="open-input" onchange="Book.onFileOpen(this.files[0])" style="display: none;">
           <input id='save-btn' type="button" title="Guardar proyecto" onclick="Book.onSave();"> <br>
 
           <input id='play-btn' type="button" title="Comenzar/Parar" onclick="Book.play();">

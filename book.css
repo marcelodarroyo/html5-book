@@ -23,6 +23,10 @@ body {
 	width: 4em;
 }
 
+#text {
+	width: 40em;
+}
+
 #editor {
 	border: 1px solid black;
 	margin: auto;
