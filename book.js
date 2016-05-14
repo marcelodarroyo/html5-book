@@ -402,6 +402,7 @@ Book = {
 				height: 100,
 				rotation: 0,					// Rotation degrees
 				sound: -1,						// sound index (in Book.sounds[])
+                text: '',                       // To show with image
 				gotoPage: 0						// Skip to page when click
 			}
 		);
@@ -420,6 +421,7 @@ Book = {
 				height: 100,
 				rotation: 0,					// Rotation degrees
 				sound: -1,						// Sound index (in Book.sounds[])
+                text: '',                       // Text (to be displayed when animating)
 				ticksPerFrame: 5,				// 12 fps when running at 60 fps
 				animationStart: 'show',			// click | show
 				animationEnd: 'repeat',  		// stop | reset | repeat
@@ -502,6 +504,17 @@ Book = {
 		this.ctx.stroke();
 	},
 
+    drawText: function (elem) {
+        this.ctx.font = '30px Comic Sans MS';
+        var txtWidth = this.ctx.measureText(elem.text).width,
+            x = elem.x + elem.width/2 - txtWidth/2,
+            y = elem.y - 10;
+        this.ctx.fillStyle = 'white';
+        this.ctx.fillRect(x-5, y-30, txtWidth+10, 40);
+        this.ctx.fillStyle = 'red';
+        this.ctx.fillText(elem.text,x,y);
+    },
+
 	// Draw a sprite frame and compute next frame
 	drawSpriteFrame: function (elem, x, y) {
 		var i = elem.index - (this.backgroundsGallery.length + this.imagesGallery.length);
@@ -520,9 +533,12 @@ Book = {
 		if ( Book.mode == 'editing' &&  elem == Book.currentElement )
 			Book.drawControls(x, y, elem.width, elem.height);
     	
-    	// compute next frame
-    	if ( this.mode == 'playing' && !elem.stopped )
-    		if ( ++(elem.ticks) == 60/elem.ticksPerFrame ) {
+    	if ( elem.text.length > 0 )
+            this.drawText(elem);
+    	
+        // compute next frame
+    	if ( this.mode == 'playing' && !elem.stopped ) {
+            if ( ++(elem.ticks) == 60/elem.ticksPerFrame ) {
     			var frames = sprite.cols * sprite.rows;
     			elem.ticks = 0;
     			if ( elem.animationEnd == 'repeat' )
@@ -538,12 +554,15 @@ Book = {
 	    					elem.stopped = true;
     					}
     		}
+        }
 	},
 
 	// Draw image in canvas
 	drawImage: function(elem, x, y) {
 		var image = this.images[elem.index];
 	    this.ctx.drawImage(image, x, y, elem.width, elem.height);
+        if ( elem.text.length > 0 )
+            this.drawText(elem);
 	   	if (this.mode == 'editing' && elem == this.currentElement)
     		this.drawControls(x,y,elem.width,elem.height);
 	},
@@ -644,18 +663,29 @@ Book = {
     	}
     },
 
+    onChangeText: function (value) {
+        if ( this.currentElement ) {
+            console.log('New text: ' + value);
+            this.currentElement.text = value;
+            this.drawPage();
+        }
+    },
+
     updateProperties: function () {
     	var gotoPage = document.getElementById('goto-page');
     	var animStart = document.getElementById('anim-start');
     	var animEnd = document.getElementById('anim-end');
     	var animSpeed = document.getElementById('anim-speed');
     	var sound = document.getElementById('sound-src');
+        var text = document.getElementById('text');
 
 		gotoPage.value = animSpeed.value = 0;
 		gotoPage.disabled = animStart.disabled = animEnd.disabled = animSpeed.disabled = sound.disabled =
 		animSpeed.disabled = true;
 
 		if ( this.currentElement ) {
+            text.disabled = false;
+            text.value = Book.currentElement.text;
 			sound.disabled = false;
 			sound.filename = Book.currentElement.sound;
 		}
