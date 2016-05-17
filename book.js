@@ -533,11 +533,10 @@ Book = {
 		if ( Book.mode == 'editing' &&  elem == Book.currentElement )
 			Book.drawControls(x, y, elem.width, elem.height);
     	
-    	if ( elem.text.length > 0 )
-            this.drawText(elem);
-    	
         // compute next frame
     	if ( this.mode == 'playing' && !elem.stopped ) {
+    		if ( elem.text.length > 0 )
+            	this.drawText(elem);
             if ( ++(elem.ticks) == 60/elem.ticksPerFrame ) {
     			var frames = sprite.cols * sprite.rows;
     			elem.ticks = 0;
@@ -575,7 +574,8 @@ Book = {
     		console.log('Drag started from backgrounds...');
     		Book.draggedImageId = this.id;
     		Book.draggingFrom = 'backgrounds';
-    	}
+    	} else
+    		alert('Crea una página antes...');
     },
 
     onImagesDragStart: function (event) {
@@ -583,7 +583,8 @@ Book = {
     		console.log('Drag started from images...');
 	    	Book.draggedImageId = this.id;
 	    	Book.draggingFrom = 'images';
-	    }
+	    } else
+    		alert('Crea una página antes...');
     },
 
     onSpritesDragStart: function (event) {
@@ -591,7 +592,8 @@ Book = {
     		console.log('Drag started from sprites...');
 	    	Book.draggedImageId = this.id;
 	    	Book.draggingFrom = 'sprites';
-	    }
+	    } else
+    		alert('Crea una página antes...');
     },
 
     //===================================================================================
