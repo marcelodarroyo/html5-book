@@ -22,7 +22,7 @@ Book = {
 	
 	ctx: null,
 
-	backgroundsGallery: null,
+	backgroundsGallery: [],
 
 	imagesGallery: [],
 
@@ -603,7 +603,9 @@ Book = {
     // Add page after current page
     addPage: function () {
     	var i = (!this.currentPage)? -1 : this.pages.indexOf(this.currentPage);
-    	this.pages[++i] = { background: -1, content: [] };
+        
+        // insert new page
+    	this.pages.splice(++i,0,{ background: -1, content: [] }); 
     	this.currentPage = this.pages[i];
     	this.createPagesGallery();
     	this.drawPage();
