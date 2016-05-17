@@ -24,11 +24,11 @@ Book = {
 
 	backgroundsGallery: null,
 
-	imagesGallery: null,
+	imagesGallery: [],
 
-	spritesGallery: null,
+	spritesGallery: [],
 
-	audioGallery: null,
+	audioGallery: [],
 
 	openPropertiesDialog: null,
 
