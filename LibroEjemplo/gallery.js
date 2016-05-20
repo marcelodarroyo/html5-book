@@ -10,7 +10,7 @@ Book.imagesGallery = [
 	'imagenes/speech_bubble.png',
   	'imagenes/speech-bubble1.png',
   	'imagenes/speech-bubble2.png',
-	'imagenes/speech-bubble3.png',
+	'imagenes/speech-bubble3.jpg',
 	'imagenes/thinking-bubble.png',
   	'imagenes/abeja-miel.jpg',
   	'imagenes/abeja-contenta.jpg',
