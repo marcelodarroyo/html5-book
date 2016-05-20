@@ -160,12 +160,12 @@ Book = {
 		if ( this.mode == 'editing' ) {
 			var container = document.getElementById(gallery);
 
-			// Put a copy in gallery
+			// Put a copy in gallery (smaller size)
 			img = new Image();
 			img.id = '' + (this.images.length - 1);
 			img.src = src;
 			img.draggable = 'true';
-			img.crossOrigin = "Anonymous";
+			// img.crossOrigin = "Anonymous";
 
 			if ( gallery == 'backgrounds' )
 				img.addEventListener('dragstart', this.onBackgroundsDragStart, false);
@@ -341,10 +341,12 @@ Book = {
     	} else
     		// We are in 'playing' mode
     		if ( Book.currentElement ) {
-    			if ( Book.currentElement.type == 'sprite' && Book.currentElement.animationStart == 'click' ) {
+    			if ( Book.currentElement.type == 'sprite' && 
+    				 Book.currentElement.animationStart == 'click' ) {
     				console.log('Activating sprite...');
     				Book.currentElement.stopped = false;
-    			} else if ( Book.currentElement.gotoPage > 0 && Book.currentElement.gotoPage <= Book.pages.length ) 
+    			} else if ( Book.currentElement.gotoPage > 0 && 
+    				        Book.currentElement.gotoPage <= Book.pages.length ) 
     			{
     				// Page change
     				Book.stopPlay();
@@ -511,7 +513,7 @@ Book = {
 	},
 
     drawText: function (elem) {
-        this.ctx.font = '30px Comic Sans MS';
+        this.ctx.font = '25px Comic Sans MS';
         var txtWidth = this.ctx.measureText(elem.text).width,
             x = elem.x + elem.width/2 - txtWidth/2,
             y = elem.y + elem.height/2;
@@ -677,6 +679,7 @@ Book = {
         }
     },
 
+    // Update and enable/disable properties editor inputs
     updateProperties: function () {
     	var gotoPage = document.getElementById('goto-page');
     	var animStart = document.getElementById('anim-start');
@@ -686,8 +689,8 @@ Book = {
         var text = document.getElementById('text');
 
 		gotoPage.value = animSpeed.value = 0;
-		gotoPage.disabled = animStart.disabled = animEnd.disabled = animSpeed.disabled = sound.disabled =
-		animSpeed.disabled = text.disabled = true;
+		gotoPage.disabled = animStart.disabled = animEnd.disabled = 
+		animSpeed.disabled = sound.disabled = animSpeed.disabled = true;
 
 		if ( this.currentElement ) {
             text.disabled = false;
@@ -701,10 +704,6 @@ Book = {
     		gotoPage.disabled = false;
     		gotoPage.value = Book.currentElement.gotoPage;
     		animSpeed.value = 0;
-    		/*
-    		if ( this.currentElement.src.search('speech_bubble') >= 0)
-    			text.disabled = false;
-    		*/
     	}
     	if ( this.currentElement.type == 'sprite' ) {
     		animStart.disabled = false;

@@ -1,0 +1,186 @@
+body {
+	width: 100%;
+	height: 100%;
+	position: relative;
+	text-align: center;
+	overflow-x: hidden;
+}
+
+#properties {
+	position: relative;
+	text-align: left;
+	border: 1px solid black;
+	background-color: rgba(200,200,200,0.3);
+	overflow: auto;
+	width: 100%;
+}
+
+#goto-page {
+	width: 4em;
+}
+
+#anim-speed {
+	width: 4em;
+}
+
+#text {
+	width: 40em;
+}
+
+#editor {
+	border: 1px solid black;
+	margin: auto;
+	overflow: auto;
+	width: 100%;	
+}
+
+#gallery {
+	border: 1px solid black;
+	margin: auto;
+	overflow: auto;
+	float: left;
+	width: 9%;
+	height: 600px;
+	background-color: rgba(150,150,200,0.2);
+}
+
+#backgrounds > img {
+	display: block;
+	width: 48px;
+	height: 48px;
+	margin: auto;
+	margin-bottom: 5px;
+}
+
+#images > img {
+	display: block;
+	width: 48px;
+	height: 48px;
+	margin: auto;
+	margin-bottom: 5px;
+}
+
+#sprites > img {
+	display: block;
+	width: 48px;
+	height: 48px;
+	margin: auto;
+	margin-bottom: 5px;
+}
+
+#canvas {
+	border: 1px solid black;
+	float: left;
+}
+
+#pages-gallery {
+	border: 1px solid black;
+	margin: auto;
+	float: left;
+	width: 8%;
+	background-color: rgba(150,200,200,0.2);
+}
+
+#pages {
+	overflow: auto;
+}
+
+#buttons {
+	border: 1px solid black;
+	text-align: center;
+	margin: auto;
+}
+
+#pages > input {
+	display: block;
+	width: 48px;
+	height: 48px;
+	margin: auto;
+	margin-bottom: 5px;
+	overflow: auto;
+	background-size: 100%;
+	background-image: url('res/blank-page-icon.png');
+}
+
+.current-page {
+	border: 1px solid black;
+}
+
+h3 {
+	text-align: center;
+}
+
+#add-page-btn {
+	width: 35px;
+	height: 35px;
+	margin: auto;
+	background-size: 100%;
+	background-image: url('res/add-page-icon-48.png');
+}
+
+#del-page-btn {
+	width: 35px;
+	height: 35px;
+	margin: auto;
+	background-size: 100%;
+	background-image: url('res/del-page-icon-48.png');
+}
+
+#open-btn {
+	margin-top: 10px;
+	width: 35px;
+	height: 35px;
+	margin: auto;
+	background-size: 100%;
+	background-image: url('res/open-icon.png');
+}
+
+#save-btn {
+	width: 35px;
+	height: 35px;
+	margin: auto;
+	background-size: 100%;
+	background-image: url('res/save-icon.png');
+}
+
+#play-btn {
+	margin-top: 10px;
+	width: 35px;
+	height: 35px;
+	margin: auto;
+	background-size: 100%;
+	background-image: url('res/play-icon.png');
+}
+
+#stop-btn {
+	margin-top: 10px;
+	margin: auto;
+	width: 35px;
+	height: 35px;
+	background-size: 100%;
+	background-image: url('res/stop-icon.png');	
+}
+
+#save-dialog {
+	position: absolute;
+	height: 15%;
+	width: 30%;
+	top: 50%;
+	bottom: 50%;
+	left: 0;
+	right: 0;
+	text-align: left;
+	margin: auto;
+	background: rgba(100,100,100,0.8);
+	z-index: 999;
+	border: 1px solid black;
+	display: none;
+}
+
+#save-buttons {
+	text-align: center;
+}
+
+#sounds {
+	display: none;
+}

@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html>
+
+  <head>
+    <meta charset="utf-8"/>
+    <link rel="stylesheet" type="text/css" href="book.css">
+    <script type="text/javascript" src="geometry.js"></script>
+    <script type="text/javascript" src="book.js"></script>
+    <script type="text/javascript" src="gallery.js"></script>
+    <title>Libro</title>
+  </head>
+
+  <body onload="Book.init('canvas')" onresize="Book.resize()">
+
+    <!-- Current object (image, sprite) properties -->
+    <div id="properties">
+        <label for="goto-page">Ir a pág.:</label>
+        <input id="goto-page" type="number" name="goto-page" value="0" disabled
+         onchange="Book.onChangeGotoPage(this.value)">
+
+        <label for="anim-start">Animar:</label>
+        <select id="anim-start" name="anim-start" onchange="Book.onChangeAnimStart(this.value)" disabled>
+          <option value="show">Al mostrar página</option>
+          <option value="click">Al hacer click</option>
+        </select>
+
+        <label for="anim-end">Parar:</label>
+        <select id="anim-end" name="anim-end" onchange="Book.onChangeAnimEnd(this.value)" disabled>
+          <option value="repeat">Nunca</option>
+          <option value="stop">Quedar en la última posición</option>
+          <option value="reset">Parar y volver a la primera posición</option>
+        </select>
+
+        <label for="anim-speed">Vel. Anim.:</label>
+        <input id="anim-speed" type="number" name="anim-speed" min="1" max="20" disabled
+               onchange="Book.onChangeAnimSpeed(this.value)">
+
+        <br>
+		
+        <label for="sound-src">Sonido:</label>
+        <input id="sound-src" type="file" name="sound-src" accept="audio/*" disabled
+               onchange="Book.onChangeSound(this.files[0]);">
+
+    	<label for="text">Texto:</label>
+	<input id="text" type="text" disabled onchange="Book.onChangeText(this.value);">
+    </div>
+
+    <div id="editor">
+
+      <!-- Gallety (backgrounds, images, sprites) -->
+      <div id="gallery">
+        
+        <div id="backgrounds">
+          <h3>Fondos</h3>
+          <!-- Images goes here (put by BOOK.initBackgroundsGallery()) --> 
+        </div>
+        
+        <div id="images">
+          <h3>Imágenes</h3>
+          <!-- Images goes here (put by BOOK.initImagesGallery()) --> 
+        </div>
+
+        <div id="sprites">
+          <h3>Animaciones</h3>
+          <!-- Images goes here (put by BOOK.initBackgroundsGallery()) --> 
+        </div>
+
+      </div>
+
+      <!-- The canvas -->
+      <canvas id="canvas" width="800px" height="600px">
+        Tu navegador no soporta HTML5. Usa un navegador moderno como Mozilla Firefox o Google Chrome
+      </canvas>
+
+      <!-- Pages gallery and buttons -->
+      <div id="pages-gallery">
+        <h3 id="pages-header">Páginas</h3>
+        <div id='pages'>
+        <!-- pages miniatures goes here (inserted by BOOK.createPagesGallery()) -->
+        </div>
+
+        <div id="buttons">
+          <input id="add-page-btn" type="button" title="Agregar página" onclick="Book.addPage();">
+          <input id="del-page-btn" type="button" title="Eliminar página actual" onclick="Book.deletePage();"> 
+          <br>
+
+          <input id="open-btn" type="button" title="Cargar diseño de libro" onclick="Book.onOpen();">
+          <input id='save-btn' type="button" title="Guardar proyecto" onclick="Book.onSave();"> <br>
+
+          <input id='play-btn' type="button" title="Comenzar/Parar" onclick="Book.play();">
+          <input id='stop-btn' type="button">
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Modal dialog for saving content -->
+    <form id="save-dialog" >
+      <label for="sound-src">Nombre:</label>
+      <input id="file_name" type="text" name="file_name"/> <br>
+      <input id="save-json" type="radio" name="saving" checked>
+	Guardar diseño (para luego continuar editando)
+      </input> <br>
+      <input id="export-html" type="radio" name="saving" >Exportar libro en HTML</input>
+      <br>
+      <div id="save-buttons">
+        <input id="ok-save-btn" type="button" value="Ok" onclick="Book.save();">
+        <input id="cancel-save-btn" type="button" value="Cancelar" onclick="Book.closeDialog('save-dialog');">
+      <div>
+    </form>
+
+    <script id="start" type="text/javascript"></script>
+
+  </body>
+
+</html>

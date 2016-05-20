@@ -1,8 +1,14 @@
 // Loading images and sprites
 
-Book.backgroundsGallery = ['backgrounds/book-background.jpg'];
+Book.backgroundsGallery = [
+	'backgrounds/book-background.jpg'
+];
 
-Book.imagesGallery = ['res/speech_bubble1.png','images/lucas.gif','images/mickey.jpg'];
+Book.imagesGallery = [
+	'images/speech_bubble.png',
+	'images/lucas.gif',
+	'images/mickey.jpg'
+];
 
 Book.spritesGallery = [
 	{ src: 'sprites/bee-float.png', cols:4, rows: 1 },
