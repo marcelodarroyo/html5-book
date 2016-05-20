@@ -10,7 +10,7 @@
     <title>Libro</title>
   </head>
 
-  <body onload="Book.init('canvas');" onresize="Book.resize();">
+  <body onload="Book.init('canvas')" onresize="Book.resize()">
 
     <!-- Current object (image, sprite) properties -->
     <div id="properties">
@@ -42,27 +42,24 @@
                onchange="Book.onChangeSound(this.files[0]);">
 
     	<label for="text">Texto:</label>
-	<input id="text" type="text" disabled onchange="Book.onChangeText(this.value);">
+	    <input id="text" type="text" disabled onchange="Book.onChangeText(this.value);">
     </div>
 
     <div id="editor">
 
-      <!-- Gallety (backgrounds, images, sprites) -->
-      <div id="gallery">
+      <!-- Gallery (text ballons, backgrounds, images, sprites) loaded in gallery.js -->
+      <div id="gallery">       
         
-        <div id="backgrounds">
+	    <div id="backgrounds">
           <h3>Fondos</h3>
-          <!-- Images goes here (put by BOOK.initBackgroundsGallery()) --> 
         </div>
         
         <div id="images">
           <h3>Imágenes</h3>
-          <!-- Images goes here (put by BOOK.initImagesGallery()) --> 
         </div>
 
         <div id="sprites">
           <h3>Animaciones</h3>
-          <!-- Images goes here (put by BOOK.initBackgroundsGallery()) --> 
         </div>
 
       </div>
@@ -85,7 +82,6 @@
           <br>
 
           <input id="open-btn" type="button" title="Cargar diseño de libro" onclick="Book.onOpen();">
-          <input id="open-input" type="file" name="open-input" onchange="Book.onFileOpen(this.files[0])" style="display: none;">
           <input id='save-btn' type="button" title="Guardar proyecto" onclick="Book.onSave();"> <br>
 
           <input id='play-btn' type="button" title="Comenzar/Parar" onclick="Book.play();">
@@ -97,8 +93,11 @@
 
     <!-- Modal dialog for saving content -->
     <form id="save-dialog" >
-      <input id="save-json" type="radio" name="saving" checked>Guardar diseño (para luego continuar editando)</input>
-      <br>
+      <label for="sound-src">Nombre:</label>
+      <input id="file_name" type="text" name="file_name"/> <br>
+      <input id="save-json" type="radio" name="saving" checked>
+	Guardar diseño (para luego continuar editando)
+      </input> <br>
       <input id="export-html" type="radio" name="saving" >Exportar libro en HTML</input>
       <br>
       <div id="save-buttons">

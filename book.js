@@ -18,7 +18,9 @@ Images/sprites objects are created by Book.addImage() and Book.addSprite() respe
 ========================================================================================*/
 
 Book = {
-	canvas: null,
+	libro: 'libro1',
+
+    canvas: null,
 	
 	ctx: null,
 
@@ -47,7 +49,7 @@ Book = {
 
 	// drag and drop management
 	draggedImageId: null,		// image (of gallery) dragged 
-	draggingFrom: null,			// 'from-backgrounds', 'from-images', 'from-sprites'
+	draggingFrom: null,			// 'backgrounds', 'images', 'sprites'
 
 	// image is been resizing/rotated
 	actionOnElement: '',		// 'moving', 'resizing', 'rotating'
@@ -69,7 +71,7 @@ Book = {
 	// Play buttons
 	playBtn: null,
  	stopBtn: null,
-	playBtnBackground: null,	// remembered background (we change it when playing)
+	playBtnBackground: null,	// cached background button image (we change it when playing)
 
 	// Book initialization
 	init: function (canvas) {
@@ -98,6 +100,7 @@ Book = {
 		    this.canvas.addEventListener('mousemove', this.onCanvasMouseMove, false);
 		    this.canvas.addEventListener('dragover', this.onDragOverCanvas);
 	        this.canvas.addEventListener('drop', this.onCanvasDrop);
+            document.getElementById('stop-btn').style='display: none;';
     	}
 	},
 
@@ -136,6 +139,7 @@ Book = {
 	// Create images in gallery
 	initGallery: function () {
 		var i;
+
 		for (i = 0; i < this.backgroundsGallery.length; i++)
 			this.addImageToGallery("backgrounds", this.backgroundsGallery[i]);
 
@@ -174,17 +178,6 @@ Book = {
 		}
 	},
 
-	// Find an image in cache given image source
-	findImageInCache: function (src) {
-		for (var i = 0; i < this.images.length; i++)
-			if ( this.images[i].src.endsWith(src) ) {
-				console.log('found: ' + i);
-				return this.images[i];
-			}
-		console.log('Panic: can not find image in cache: ' + src);
-		return null;
-	},
-
 	//===================================================================================
 	// Page miniatures handling
 	//===================================================================================
@@ -209,9 +202,18 @@ Book = {
 			Book.currentPage = Book.pages[this.id.substring(5)/1];
 			Book.drawPage();
 		};
-
 		return btn;
 	},
+
+    updatePageMiniature: function () {
+        var i = Book.pages.indexOf(Book.currentPage);
+        var btn = document.getElementById('page-' + i);
+        var img = new Image();
+        img.onload = function (ev) {    
+            btn.style.background = img.src; 
+        };
+        img.src = this.canvas.toDataURL('image/png');
+    },
 
 	// create pages miniatures on pages gallery
 	createPagesGallery: function () {
@@ -481,6 +483,10 @@ Book = {
 	    	if ( elem.rotation != 0 )
 	    		this.ctx.restore(); // return to previous canvas settings
 	    }
+        /*
+        if ( this.mode == 'editing' )
+            this.updatePageMiniature();
+        */
     },
 
     // Draw image controls (for move, resize, rotate, delete and open properties dialog)
@@ -508,10 +514,8 @@ Book = {
         this.ctx.font = '30px Comic Sans MS';
         var txtWidth = this.ctx.measureText(elem.text).width,
             x = elem.x + elem.width/2 - txtWidth/2,
-            y = elem.y - 10;
-        this.ctx.fillStyle = 'white';
-        this.ctx.fillRect(x-5, y-30, txtWidth+10, 40);
-        this.ctx.fillStyle = 'red';
+            y = elem.y + elem.height/2;
+        this.ctx.fillStyle = 'black';
         this.ctx.fillText(elem.text,x,y);
     },
 
@@ -599,11 +603,9 @@ Book = {
     //===================================================================================
     // Pages management
     //===================================================================================
-
     // Add page after current page
     addPage: function () {
-    	var i = (!this.currentPage)? -1 : this.pages.indexOf(this.currentPage);
-        
+    	var i = (!this.currentPage)? -1 : this.pages.indexOf(this.currentPage);    
         // insert new page
     	this.pages.splice(++i,0,{ background: -1, content: [] }); 
     	this.currentPage = this.pages[i];
@@ -625,8 +627,8 @@ Book = {
 		else if (i >= this.pages.length)
 			this.currentPage = this.pages[this.pages.length - 1];
 		if ( this.currentPage ) {
+            this.createPagesGallery();
 			this.drawPage();
-			this.createPagesGallery();
 		}
     },
 
@@ -685,7 +687,7 @@ Book = {
 
 		gotoPage.value = animSpeed.value = 0;
 		gotoPage.disabled = animStart.disabled = animEnd.disabled = animSpeed.disabled = sound.disabled =
-		animSpeed.disabled = true;
+		animSpeed.disabled = text.disabled = true;
 
 		if ( this.currentElement ) {
             text.disabled = false;
@@ -699,6 +701,10 @@ Book = {
     		gotoPage.disabled = false;
     		gotoPage.value = Book.currentElement.gotoPage;
     		animSpeed.value = 0;
+    		/*
+    		if ( this.currentElement.src.search('speech_bubble') >= 0)
+    			text.disabled = false;
+    		*/
     	}
     	if ( this.currentElement.type == 'sprite' ) {
     		animStart.disabled = false;
@@ -719,41 +725,54 @@ Book = {
     // Proyect save/load
     //===================================================================================
     onOpen: function () {
-    	document.getElementById('open-input').click();
-    },
-
-    onFileOpen: function(file) {
-    	var reader = new FileReader();
-    	
-    	console.log('Loading pages from' + file.name + ' type: ' + file.type);
-    	reader.onload = function (event) {
-    		Book.pages = eval(reader.result);
-    		console.log('Loaded ' + Book.pages.length + ' pages');
-	    	if ( Book.pages.length > 0 ) {
-	    		Book.currentPage = Book.pages[0];
-		    	Book.createPagesGallery();
-	    	}
-    	};
-
-    	reader.readAsText(file);
+        // TO DO: Get list of book names to able user select
+        var libro = window.prompt('Nombre del libro: ','libro1');
+        if ( libro ) {
+            var request = new XMLHttpRequest();
+            request.open('GET', libro + '.json', true);
+            request.onreadystatechange = function () {
+                if ( request.readyState == 4 && request.status == 200 ) {
+                    Book.pages = eval(request.responseText);
+                    if ( Book.pages.length > 0 ) {
+                        Book.currentPage = Book.pages[0];
+                        Book.createPagesGallery();
+                    }
+                }
+            };
+            request.send();
+        }
     },
 
     // Save book in files. To do: Use a server for uploading content
     onSave: function () {
+        document.getElementById('file_name').value = Book.libro;
     	document.getElementById('save-dialog').style.display = 'block';
     },
 
     save: function () {
+        var file = document.getElementById('file_name');
     	var saveJSON = document.getElementById('save-json').checked;
     	var json = JSON.stringify(this.pages);
     	this.closeDialog('save-dialog');
-    	if ( saveJSON )
-	    	window.open().document.write(json);
+        var request = new XMLHttpRequest();
+        
+        Book.libro = file.value;
+        var ext = saveJSON? '.json' : '.html';
+        request.open('PUT', Book.libro + ext, true);
+        request.onreadystatechange = function () {
+            if ( request.readyState == 4 )
+                if ( request.status == 200 )
+                    window.alert('Libro guardado.');
+                else
+                    window.alert('Un error ocurrió al guardar!!!');
+        };
+    	if ( saveJSON )	
+            request.send(json);
 	    else {
 	    	// Export full HTML document
 	    	var scriptElement = document.getElementById('start');
 	    	scriptElement.text = 'Book.pages = ' + json + '; Book.startInPlayingMode();';
-	    	window.open().document.write('<!DOCTYPE html>' + document.outerHTML);
+	    	request.send('<!DOCTYE html>' + document.outerHTML);
 	    }
     },
 
